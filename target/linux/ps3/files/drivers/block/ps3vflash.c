@@ -359,7 +359,7 @@ static int ps3vflash_remove(struct ps3_system_bus_device *_dev)
 }
 
 static struct ps3_system_bus_driver ps3vflash = {
-	.match_id	= PS3_MATCH_ID_STOR_DISK,
+	.match_id	= PS3_MATCH_ID_STOR_VFLASH,
 	.core.name	= DEVICE_NAME,
 	.core.owner	= THIS_MODULE,
 	.probe		= ps3vflash_probe,
