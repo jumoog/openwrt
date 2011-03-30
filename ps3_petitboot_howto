@@ -28,6 +28,8 @@ ln -sf ../../openwrt_packages/net/wget wget
 ln -sf ../../openwrt_packages/net/dhcpcd dhcpcd
 ln -sf ../../openwrt_packages/net/net-tools net-tools
 
+# link here more packages if you want to
+
 cd ..
 
 cp ps3_petitboot_config .config
