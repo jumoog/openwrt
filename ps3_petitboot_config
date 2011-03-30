@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # OpenWrt version: Attitude Adjustment (r26286)
-# Tue Mar 29 10:31:56 2011
+# Wed Mar 30 15:20:09 2011
 #
 CONFIG_HAVE_DOT_CONFIG=y
 # CONFIG_TARGET_ppc40x is not set
@@ -334,8 +334,8 @@ CONFIG_TARGET_INITRAMFS_COMPRESSION_LZMA=y
 CONFIG_DISPLAY_SUPPORT=y
 CONFIG_BUILD_PATENTED=y
 # CONFIG_BUILD_NLS is not set
-CONFIG_SHADOW_PASSWORDS=y
-# CONFIG_CLEAN_IPKG is not set
+# CONFIG_SHADOW_PASSWORDS is not set
+CONFIG_CLEAN_IPKG=y
 # CONFIG_COLLECT_KERNEL_DEBUG is not set
 
 #
