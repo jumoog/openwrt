@@ -30,7 +30,9 @@ ln -sf ../../openwrt_packages/net/net-tools net-tools
 
 cd ..
 
-make menuconfig
-make kernel_menuconfig
+cp ps3_petitboot_config .config
+
+make menuconfig 		# optional
+make kernel_menuconfig 		# optional
 
 make V=99
