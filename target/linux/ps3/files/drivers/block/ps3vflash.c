@@ -23,13 +23,15 @@
 #include <asm/firmware.h>
 
 
-#define DEVICE_NAME		"ps3vflash"
+#define DEVICE_NAME				"ps3vflash"
 
-#define BOUNCE_SIZE		(64*1024)
+#define BOUNCE_SIZE				(64*1024)
 
-#define PS3VFLASH_MINORS	16
+#define PS3VFLASH_MINORS			16
 
-#define PS3VFLASH_NAME		"ps3vflash%c"
+#define PS3VFLASH_NAME				"ps3vflash%c"
+
+#define LV1_STORAGE_ATA_FLUSH_CACHE_EXT		(0x31)
 
 
 struct ps3vflash_private {
@@ -131,6 +133,28 @@ static int ps3vflash_submit_request_sg(struct ps3_storage_device *dev,
 	return 1;
 }
 
+static int ps3vflash_submit_flush_request(struct ps3_storage_device *dev,
+					  struct request *req)
+{
+	struct ps3vflash_private *priv = dev->sbd.core.driver_data;
+	u64 res;
+
+	dev_dbg(&dev->sbd.core, "%s:%u: flush request\n", __func__, __LINE__);
+
+	res = lv1_storage_send_device_command(dev->sbd.dev_id,
+					      LV1_STORAGE_ATA_FLUSH_CACHE_EXT, 0, 0, 0,
+					      0, &dev->tag);
+	if (res) {
+		dev_err(&dev->sbd.core, "%s:%u: sync cache failed 0x%llx\n",
+			__func__, __LINE__, res);
+		end_request(req, 0);
+		return 0;
+	}
+
+	priv->req = req;
+	return 1;
+}
+
 static void ps3vflash_do_request(struct ps3_storage_device *dev,
 			       struct request_queue *q)
 {
@@ -141,6 +165,10 @@ static void ps3vflash_do_request(struct ps3_storage_device *dev,
 	while ((req = elv_next_request(q))) {
 		if (blk_fs_request(req)) {
 			if (ps3vflash_submit_request_sg(dev, req))
+				break;
+		} else if (req->cmd_type == REQ_TYPE_LINUX_BLOCK &&
+			   req->cmd[0] == REQ_LB_OP_FLUSH) {
+			if (ps3vflash_submit_flush_request(dev, req))
 				break;
 		} else {
 			blk_dump_rq_flags(req, DEVICE_NAME " bad request");
@@ -197,10 +225,16 @@ static irqreturn_t ps3vflash_interrupt(int irq, void *data)
 		return IRQ_HANDLED;
 	}
 
-	read = !rq_data_dir(req);
-	num_sectors = req->nr_sectors;
-	op = read ? "read" : "write";
-
+	if (req->cmd_type == REQ_TYPE_LINUX_BLOCK &&
+	    req->cmd[0] == REQ_LB_OP_FLUSH) {
+		read = 0;
+		num_sectors = req->hard_cur_sectors;
+		op = "flush";
+	} else {
+		read = !rq_data_dir(req);
+		num_sectors = req->nr_sectors;
+		op = read ? "read" : "write";
+	}
 	if (status) {
 		dev_dbg(&dev->sbd.core, "%s:%u: %s failed 0x%llx\n", __func__,
 			__LINE__, op, status);
@@ -220,6 +254,16 @@ static irqreturn_t ps3vflash_interrupt(int irq, void *data)
 	spin_unlock(&priv->lock);
 
 	return IRQ_HANDLED;
+}
+
+static void ps3vflash_prepare_flush(struct request_queue *q, struct request *req)
+{
+	struct ps3_storage_device *dev = q->queuedata;
+
+	dev_dbg(&dev->sbd.core, "%s:%u\n", __func__, __LINE__);
+
+	req->cmd_type = REQ_TYPE_LINUX_BLOCK;
+	req->cmd[0] = REQ_LB_OP_FLUSH;
 }
 
 static int __devinit ps3vflash_probe(struct ps3_system_bus_device *_dev)
@@ -277,6 +321,9 @@ static int __devinit ps3vflash_probe(struct ps3_system_bus_device *_dev)
 	blk_queue_segment_boundary(queue, -1UL);
 	blk_queue_dma_alignment(queue, dev->blk_size-1);
 	blk_queue_hardsect_size(queue, dev->blk_size);
+
+	blk_queue_ordered(queue, QUEUE_ORDERED_DRAIN_FLUSH,
+			  ps3vflash_prepare_flush);
 
 	blk_queue_max_phys_segments(queue, -1);
 	blk_queue_max_hw_segments(queue, -1);
