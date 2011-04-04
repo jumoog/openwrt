@@ -5,7 +5,7 @@ cd petitboot
 git clone git://git.dukio.com/openwrt.git
 git clone git://git.dukio.com/openwrt_packages.git
 
-cd openwrt/packages
+cd openwrt/package
 
 ln -sf ../../openwrt_packages/libs/jpeg jpeg
 ln -sf ../../openwrt_packages/libs/libpng libpng
