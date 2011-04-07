@@ -24,6 +24,7 @@ ln -sf ../../openwrt_packages/utils/less less
 ln -sf ../../openwrt_packages/utils/sed sed
 ln -sf ../../openwrt_packages/utils/sdparm sdparm
 ln -sf ../../openwrt_packages/utils/hdparm hdparm
+ln -sf ../../openwrt_packages/utils/bash bash
 ln -sf ../../openwrt_packages/net/wget wget
 ln -sf ../../openwrt_packages/net/dhcpcd dhcpcd
 ln -sf ../../openwrt_packages/net/net-tools net-tools
